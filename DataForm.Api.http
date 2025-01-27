@@ -1,0 +1,6 @@
+@DataForm.Api_HostAddress = http://localhost:5178
+
+GET {{DataForm.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
