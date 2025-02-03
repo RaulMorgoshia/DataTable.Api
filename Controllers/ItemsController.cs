@@ -30,10 +30,7 @@ namespace DataForm.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<Item>> PostItem(Item item)
         {
-            // Generate the next 'No' value with the 'I00001' format based on Id
-            int nextId = (_context.Items.Any() ? _context.Items.Max(i => i.Id) : 0) + 1;
-            item.No = $"I{nextId:D5}"; // Example: I00001, I00002, etc.
-
+           
             // Add the item to the database
             _context.Items.Add(item);
             await _context.SaveChangesAsync();
@@ -47,13 +44,30 @@ namespace DataForm.Api.Controllers
         }
 
 
-        // PUT: api/Items/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutItem(int id, Item item)
         {
-            if (id != item.Id) return BadRequest();
+            if (item.Id == 0)
+            {
+                return BadRequest("Item ID cannot be 0");
+            }
 
-            _context.Entry(item).State = EntityState.Modified;
+            if (id != item.Id)
+            {
+                return BadRequest("Item ID in URL and body must match");
+            }
+
+            var existingItem = await _context.Items.FindAsync(id);
+            if (existingItem == null)
+            {
+                return NotFound();
+            }
+
+            existingItem.Name = item.Name;
+            existingItem.Description = item.Description;
+            existingItem.Price = item.Price;
+
+            _context.Entry(existingItem).State = EntityState.Modified;
 
             try
             {
@@ -61,12 +75,18 @@ namespace DataForm.Api.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ItemExists(id)) return NotFound();
+                if (!ItemExists(id))
+                {
+                    return NotFound();
+                }
                 throw;
             }
 
-            return NoContent();
+            return Ok(existingItem); // აქ ვაბრუნებთ განახლებულ ობიექტს
         }
+
+
+
 
         // DELETE: api/Items/5
         [HttpDelete("{id}")]
